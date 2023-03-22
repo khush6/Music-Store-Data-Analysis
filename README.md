@@ -94,7 +94,48 @@ LIMIT 10;
 | 52        | Kiss                         | 35              |
 
 
-### Q4. Find top 10 longest the tracks that have duration longer than the average song length
+
+### Q4. Who are the top 10 best-selling music artists based on the total revenue generated from their albums? 
+
+
+```SQL
+SELECT 
+	RANK() OVER (ORDER BY SUM(i.total) DESC) AS artist_rank,
+	art.name, 	
+	ROUND(SUM(i.total):: numeric, 2) AS total_revenue
+FROM invoice AS i
+INNER JOIN customer AS C
+    ON i.customer_id = c.customer_id
+INNER JOIN invoice_line AS il
+    ON i.invoice_id = il.invoice_id
+INNER JOIN track AS t
+    ON il.track_id = t.track_id
+INNER JOIN genre AS g
+    ON t.genre_id = g.genre_id
+INNER JOIN album AS a
+    ON t.album_id = a.album_id
+INNER JOIN artist AS art
+    ON a.artist_id = art.artist_id
+GROUP BY art.name
+ORDER BY artist_rank
+LIMIT 10;
+```
+
+| artist_rank | name                  | total_revenue |
+|-------------|-----------------------|---------------|
+| 1           | Jimi Hendrix          | 2623.50       |
+| 2           | Queen                 | 2269.08       |
+| 3           | Red Hot Chili Peppers | 1484.01       |
+| 4           | Pearl Jam             | 1387.98       |
+| 5           | Nirvana               | 1366.20       |
+| 6           | Guns N' Roses         | 1261.26       |
+| 7           | The Rolling Stones    | 1107.81       |
+| 8           | Eric Clapton          | 1090.98       |
+| 9           | Foo Fighters          | 1040.49       |
+| 10          | AC/DC                 | 1029.60       |
+
+
+### Q5. Find top 10 longest the tracks that have duration longer than the average song length
 
 ```sql
 SELECT 
@@ -120,7 +161,7 @@ LIMIT 10;
 | Fire In Space               | 48             |
 
 
-### Q5.Find customer details of all Rock genre listeners. Return your list ordered alphabetically by email.
+### Q6.Find customer details of all Rock genre listeners. Return your list ordered alphabetically by email.
 ```sql
 SELECT DISTINCT
     email,
@@ -157,28 +198,34 @@ Here are the 1st 10 results:
 
 
 
-### Q6. Which customer has spent the most money?
+### Q7. We want to rank our top customers by total sales, where total sales is >= 100
 
 ```sql
-SELECT 
-    c.customer_id, 
-    first_name,
-    last_name, 
-    ROUND(SUM(total)::numeric, 2) AS total_sales 
-FROM customer AS c
-INNER JOIN invoice AS i 
-    ON c.customer_id = i.customer_id
-GROUP BY c.customer_id
-ORDER BY total_sales DESC
-LIMIT 1;
+SELECT
+	i.customer_id, 
+	first_name, last_name, 
+	ROUND(SUM(total):: numeric, 2) AS total_sales,
+DENSE_RANK() OVER (ORDER BY SUM(total) DESC) AS rank 
+FROM invoice AS i
+INNER JOIN customer AS c 
+	ON i.customer_id = c.customer_id
+GROUP BY i.customer_id, first_name, last_name
+HAVING SUM(total) >= 100
 ```
 
-| customer_id | first_name                                         | last_name                                          | total_sales |
-|-------------|----------------------------------------------------|----------------------------------------------------|-------------|
-| 5           | R                                                  | Madhav                                             | 144.54      |
+| customer_id | first_name                                         | last_name                                          | total_sales | rank |
+|-------------|----------------------------------------------------|----------------------------------------------------|-------------|------|
+| 5           | R                                                  | Madhav                                             | 144.54      | 1    |
+| 6           | Helena                                             | Holý                                               | 128.70      | 2    |
+| 46          | Hugh                                               | O'Reilly                                           | 114.84      | 3    |
+| 58          | Manoj                                              | Pareek                                             | 111.87      | 4    |
+| 1           | Luís                                               | Gonçalves                                          | 108.90      | 5    |
+| 13          | Fernanda                                           | Ramos                                              | 106.92      | 6    |
+| 34          | João                                               | Fernandes                                          | 102.96      | 7    |
 
 
-### Q7. Find top 5 countries for most number of sales
+
+### Q8. Find top 5 countries for most number of sales
 
 ```sql
 SELECT  
@@ -200,7 +247,7 @@ Top 5 countries by invoices:
 
 
 
-### Q8. Customers from which city spent the most? We would like to throw a promotional Music Festival in the city we made the most money.
+### Q9. Customers from which city spent the most? We would like to throw a promotional Music Festival in the city we made the most money.
 
 ```sql
 SELECT 
@@ -219,7 +266,7 @@ LIMIT 1;
 
 
 
-### Q9. What media is earning the most?
+### Q10. What media is earning the most?
 ```sql
 SELECT
     mt.name AS media_type, 
@@ -251,14 +298,14 @@ ORDER by total_sales DESC;
 
 
 
-### Q10. How many employee levels do we have in the organization?
+### Q11. How many employee levels do we have in the organization?
 
 ```sql
 SELECT
-    COUNT(DISTINCT levels)
+    COUNT(DISTINCT levels) as total_levels
 FROM employee;
 ```
-| count |
+| total_levels |
 |--------|
 | 6     |
 
@@ -282,7 +329,7 @@ ORDER BY levels DESC;
 
 
 
-### Q11. Who is the senior most employee based on job title?
+### Q12. Who is the senior most employee based on job title?
 
 ```sql
 SELECT 
@@ -303,7 +350,7 @@ LIMIT 1;
 
 
 
-### Q12. Each customer gets assigned to a sales support agent after completing their first purchase. Find top 3 support agents by sales.
+### Q13. Each customer gets assigned to a sales support agent after completing their first purchase. Find top 3 support agents by sales.
 
 ```SQL
 WITH support_rep_sales AS (
